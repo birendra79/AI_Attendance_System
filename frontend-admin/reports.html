@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - AI Attendance Admin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* [Same base layout] */
+        :root {
+            --sidebar-width: 260px;
+            --primary-bg: #f4f7fe;
+            --sidebar-bg: #111c43;
+            --sidebar-hover: rgba(255, 255, 255, 0.08);
+            --sidebar-active: #0d6efd;
+            --text-main: #2b3674;
+            --text-muted: #a3aed1;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            color: #fff;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .nav-links {
+            padding: 1rem 0.5rem;
+            list-style: none;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.8rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+            background-color: var(--sidebar-hover);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            color: #fff;
+            background-color: var(--sidebar-active);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        }
+
+        .nav-link i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem 2.5rem;
+            flex-grow: 1;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            color: #2b3674;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: #a3aed1;
+            font-weight: 500;
+        }
+
+        .panel {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2b3674;
+            margin-bottom: 1.25rem;
+        }
+
+        .stat-card {
+            border: 1px solid #f4f7fe;
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-bg-blue {
+            background: #e8f0fe;
+            color: #0d6efd;
+        }
+
+        .stat-bg-orange {
+            background: #fff4e5;
+            color: #fd7e14;
+        }
+
+        .stat-bg-red {
+            background: #feeeed;
+            color: #dc3545;
+        }
+
+        /* Form Builders */
+        .report-builder-bg {
+            background: linear-gradient(135deg, #f4f7fe 0%, #eef2fa 100%);
+            border: 1px solid #e0e6fb;
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-icon"><i class="fa-solid fa-expand text-white"></i></div>
+            <div class="brand-text">Aura Admin</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i>
+                    Dashboard</a></li>
+            <li class="nav-item mt-3 mb-1"><small class="text-uppercase ms-3"
+                    style="color:var(--text-muted);font-size:0.75rem;font-weight:700">Management</small></li>
+            <li class="nav-item"><a href="students.html" class="nav-link"><i class="fa-solid fa-user-graduate"></i>
+                    Students</a></li>
+            <li class="nav-item"><a href="attendance.html" class="nav-link"><i class="fa-regular fa-calendar-check"></i>
+                    Attendance</a></li>
+            <li class="nav-item"><a href="reports.html" class="nav-link active"><i class="fa-solid fa-file-export"></i>
+                    Reports</a></li>
+            <li class="nav-item mt-3 mb-1"><small class="text-uppercase ms-3"
+                    style="color:var(--text-muted);font-size:0.75rem;font-weight:700">System</small></li>
+            <li class="nav-item"><a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Settings</a>
+            </li>
+            <li class="nav-item"><a href="../frontend-kiosk/index.html" target="_blank" class="nav-link text-warning"><i
+                        class="fa-solid fa-camera"></i> Kiosk Mode</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button id="logoutBtn" class="btn btn-outline-light w-100"><i
+                    class="fa-solid fa-arrow-right-from-bracket me-2"></i> Log Out</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <div class="page-subtitle">Pages / Management</div>
+                <h1 class="page-title">Reports & Analytics</h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Col: Generator -->
+            <div class="col-lg-5">
+                <div class="panel report-builder-bg">
+                    <h3 class="panel-title"><i class="fa-solid fa-scroll text-primary me-2"></i> Custom Report Builder
+                    </h3>
+                    <form id="reportForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Report Type</label>
+                            <select class="form-select border-0 shadow-sm">
+                                <option>Class Attendance Summary</option>
+                                <option>Individual Student Roll</option>
+                                <option>AI Confidence Diagnostics</option>
+                                <option>Spoofing Attempt Logs</option>
+                            </select>
+                        </div>
+                        <div class="row mb-3 g-2">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Start Date</label>
+                                <input type="date" class="form-control border-0 shadow-sm">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">End Date</label>
+                                <input type="date" class="form-control border-0 shadow-sm">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Session / Class</label>
+                            <select class="form-select border-0 shadow-sm">
+                                <option>All Sessions</option>
+                                <option>CS101 - Morning</option>
+                            </select>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-primary fw-bold flex-grow-1"
+                                style="border-radius:8px"><i class="fa-solid fa-file-csv me-2"></i> Export CSV</button>
+                            <button type="button" class="btn btn-danger fw-bold flex-grow-1"
+                                style="border-radius:8px"><i class="fa-solid fa-file-pdf me-2"></i> Export PDF</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="panel">
+                    <h3 class="panel-title">System Insights</h3>
+                    <div class="stat-card mb-3">
+                        <div class="stat-icon stat-bg-blue"><i class="fa-solid fa-bullseye"></i></div>
+                        <div>
+                            <div class="text-muted" style="font-size:0.85rem; font-weight:600">AVERAGE AI CONFIDENCE
+                            </div>
+                            <div class="fw-bold" style="font-size:1.4rem">94.2%</div>
+                        </div>
+                    </div>
+                    <div class="stat-card mb-3">
+                        <div class="stat-icon stat-bg-orange"><i class="fa-solid fa-masks-theater"></i></div>
+                        <div>
+                            <div class="text-muted" style="font-size:0.85rem; font-weight:600">MASKED MATCHES (30D)
+                            </div>
+                            <div class="fw-bold" style="font-size:1.4rem">1,240</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon stat-bg-red"><i class="fa-solid fa-shield-halved"></i></div>
+                        <div>
+                            <div class="text-muted" style="font-size:0.85rem; font-weight:600">SPOOFING ATTEMPTS</div>
+                            <div class="fw-bold" style="font-size:1.4rem">12 <small class="text-danger"
+                                    style="font-size:0.8rem; font-weight:500;">Blocked</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Col: Charts -->
+            <div class="col-lg-7">
+                <div class="panel h-100">
+                    <h3 class="panel-title text-center">AI Tracking & Absenteeism Heatmap</h3>
+
+                    <!-- Chart 1: Daily Trends -->
+                    <div style="height: 300px; margin-bottom: 2rem;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+
+                    <h3 class="panel-title text-center mt-5 mb-3">Confidence Score Distribution</h3>
+                    <!-- Chart 2: Dist -->
+                    <div style="height: 250px; margin-bottom: 1rem;">
+                        <canvas id="distChart"></canvas>
+                    </div>
+                    <p class="text-center text-muted" style="font-size:0.85rem">Scores below 45% (Strict Limit) are
+                        rejected as Unknown Faces or Spoofs.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('adminToken');
+        if (!token) window.location.href = 'login.html';
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'login.html';
+        });
+
+        // Initialize Charts
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Mon', 'Tue'],
+                datasets: [{
+                    label: 'Present %',
+                    data: [88, 92, 85, 95, 82, 89, 94],
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 50, max: 100 } } }
+        });
+
+        const ctxDist = document.getElementById('distChart').getContext('2d');
+        new Chart(ctxDist, {
+            type: 'bar',
+            data: {
+                labels: ['<40%', '40-60%', '60-80%', '80-95%', '>95%'],
+                datasets: [{
+                    label: 'Verifications',
+                    data: [12, 45, 120, 480, 890],
+                    backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#198754', '#0d6efd'],
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    </script>
+</body>
+
+</html>

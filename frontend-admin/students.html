@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students - AI Attendance Admin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* [Same base layout] */
+        :root {
+            --sidebar-width: 260px;
+            --primary-bg: #f4f7fe;
+            --sidebar-bg: #111c43;
+            --sidebar-hover: rgba(255, 255, 255, 0.08);
+            --sidebar-active: #0d6efd;
+            --text-main: #2b3674;
+            --text-muted: #a3aed1;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            color: #fff;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .nav-links {
+            padding: 1rem 0.5rem;
+            list-style: none;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.8rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+            background-color: var(--sidebar-hover);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            color: #fff;
+            background-color: var(--sidebar-active);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        }
+
+        .nav-link i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem 2.5rem;
+            flex-grow: 1;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            color: #2b3674;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: #a3aed1;
+            font-weight: 500;
+        }
+
+        .panel {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .table-custom th {
+            font-weight: 600;
+            color: #a3aed1;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid #f4f7fe;
+            padding: 1rem;
+        }
+
+        .table-custom td {
+            vertical-align: middle;
+            padding: 1rem;
+            color: #2b3674;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #f4f7fe;
+        }
+
+        /* Wizard Steps */
+        .wizard-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .wizard-steps::before {
+            content: "";
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #e9ecef;
+            z-index: 1;
+        }
+
+        .step-indicator {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            width: 33%;
+        }
+
+        .step-circle {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #e9ecef;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 8px;
+            border: 3px solid #fff;
+            transition: 0.3s;
+        }
+
+        .step-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6c757d;
+            transition: 0.3s;
+        }
+
+        .step-indicator.active .step-circle {
+            background: #0d6efd;
+            color: #fff;
+        }
+
+        .step-indicator.active .step-title {
+            color: #2b3674;
+        }
+
+        .step-indicator.completed .step-circle {
+            background: #198754;
+            color: #fff;
+        }
+
+        /* Wizard Content */
+        .wizard-pane {
+            display: none;
+        }
+
+        .wizard-pane.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Camera Grid */
+        #videoElement {
+            width: 100%;
+            border-radius: 12px;
+            background: #000;
+            transform: scaleX(-1);
+        }
+
+        .pose-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+        .pose-card {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            text-align: center;
+            padding: 0.5rem;
+            position: relative;
+            aspect-ratio: 3/4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pose-card.captured {
+            border: 2px solid #198754;
+            border-style: solid;
+            background: #e6f8ec;
+        }
+
+        .pose-card .icon {
+            font-size: 1.5rem;
+            color: #adb5bd;
+            margin-bottom: 5px;
+        }
+
+        .pose-card.captured .icon {
+            color: #198754;
+        }
+
+        .pose-card span {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
+        }
+
+        .pose-card img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .guidance-box {
+            background: #e8f0fe;
+            color: #0d6efd;
+            padding: 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-icon"><i class="fa-solid fa-expand text-white"></i></div>
+            <div class="brand-text">Aura Admin</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i>
+                    Dashboard</a></li>
+            <li class="nav-item mt-3 mb-1"><small class="text-uppercase ms-3"
+                    style="color:var(--text-muted);font-size:0.75rem;font-weight:700">Management</small></li>
+            <li class="nav-item"><a href="students.html" class="nav-link active"><i
+                        class="fa-solid fa-user-graduate"></i> Students</a></li>
+            <li class="nav-item"><a href="attendance.html" class="nav-link"><i class="fa-regular fa-calendar-check"></i>
+                    Attendance</a></li>
+            <li class="nav-item"><a href="reports.html" class="nav-link"><i class="fa-solid fa-file-export"></i>
+                    Reports</a></li>
+            <li class="nav-item mt-3 mb-1"><small class="text-uppercase ms-3"
+                    style="color:var(--text-muted);font-size:0.75rem;font-weight:700">System</small></li>
+            <li class="nav-item"><a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Settings</a>
+            </li>
+            <li class="nav-item">
+                <a href="../frontend-kiosk/index.html" target="_blank" class="nav-link text-warning"><i
+                        class="fa-solid fa-camera"></i> Kiosk Mode</a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <button id="logoutBtn" class="btn btn-outline-light w-100"><i
+                    class="fa-solid fa-arrow-right-from-bracket me-2"></i> Log Out</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <div class="page-subtitle">Pages / Management</div>
+                <h1 class="page-title">Student Directory</h1>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn btn-primary fw-bold" style="border-radius: 8px;" data-bs-toggle="modal"
+                    data-bs-target="#enrollModal">
+                    <i class="fa-solid fa-plus me-2"></i> Enroll New Student
+                </button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="d-flex justify-content-between mb-3">
+                <div class="input-group" style="width: 300px;">
+                    <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search"></i></span>
+                    <input type="text" class="form-control border-start-0" placeholder="Search by name or email">
+                </div>
+                <button class="btn btn-light text-primary fw-bold"><i class="fa-solid fa-file-export"></i> Export
+                    CSV</button>
+            </div>
+
+            <table class="table table-custom table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Enrollment Date</th>
+                        <th>Face Model</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center py-3 text-muted">Loading students...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- ==== 4-Step Enrollment Wizard Modal ==== -->
+    <div class="modal fade" id="enrollModal" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0" style="border-radius:14px;overflow:hidden;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Advanced Biometric Enrollment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-3" style="padding:2rem">
+
+                    <!-- Steps Top Nav -->
+                    <div class="wizard-steps">
+                        <div class="step-indicator active" id="ind-1">
+                            <div class="step-circle">1</div>
+                            <div class="step-title">Basic Details</div>
+                        </div>
+                        <div class="step-indicator" id="ind-2">
+                            <div class="step-circle">2</div>
+                            <div class="step-title">Multi-Pose Face</div>
+                        </div>
+                        <div class="step-indicator" id="ind-3">
+                            <div class="step-circle">3</div>
+                            <div class="step-title">Confirmation</div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Details -->
+                    <div class="wizard-pane active" id="step1">
+                        <h6 class="fw-bold text-primary mb-3">Student Information</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Full Name</label>
+                                <input type="text" class="form-control" id="stuName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Email Address</label>
+                                <input type="email" class="form-control" id="stuEmail" required>
+                            </div>
+                            <div class="col-12 text-end mt-4">
+                                <button type="button" class="btn btn-primary px-4 fw-bold next-btn"
+                                    data-target="step2">Next Step <i class="fa-solid fa-arrow-right ms-2"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Multi-Pose Face Enrollment -->
+                    <div class="wizard-pane" id="step2">
+                        <div class="guidance-box" id="poseGuidance">
+                            <i class="fa-regular fa-face-smile me-2"></i> Look straight at the camera
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-7">
+                                <video id="videoElement" autoplay playsinline></video>
+                                <canvas id="canvasElement" style="display:none;"></canvas>
+                                <div class="text-center mt-3">
+                                    <button class="btn btn-warning fw-bold rounded-pill shadow-sm" id="capturePoseBtn">
+                                        <i class="fa-solid fa-camera"></i> Capture Frame
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <h6 class="fw-bold mb-2">Required Poses</h6>
+                                <p class="text-muted" style="font-size:0.8rem">We capture 5 angles to build a robust 3D
+                                    profile resistant to lighting and angle changes.</p>
+
+                                <div class="pose-grid">
+                                    <div class="pose-card" id="pose-front" data-pose="Front">
+                                        <i class="fa-solid fa-user icon"></i><span>Front</span>
+                                        <img src="" id="img-front">
+                                    </div>
+                                    <div class="pose-card" id="pose-left" data-pose="Left">
+                                        <i class="fa-solid fa-arrow-turn-down icon"
+                                            style="transform: rotate(90deg)"></i><span>Left</span>
+                                        <img src="" id="img-left">
+                                    </div>
+                                    <div class="pose-card" id="pose-right" data-pose="Right">
+                                        <i class="fa-solid fa-arrow-turn-down icon"
+                                            style="transform: rotate(-90deg)"></i><span>Right</span>
+                                        <img src="" id="img-right">
+                                    </div>
+                                    <div class="pose-card" id="pose-up" data-pose="Up">
+                                        <i class="fa-solid fa-arrow-up icon"></i><span>Up</span>
+                                        <img src="" id="img-up">
+                                    </div>
+                                    <div class="pose-card" id="pose-down" data-pose="Down">
+                                        <i class="fa-solid fa-arrow-down icon"></i><span>Down</span>
+                                        <img src="" id="img-down">
+                                    </div>
+                                </div>
+                                <div id="poseAlert" class="alert alert-danger p-2 mt-3 d-none" style="font-size:0.8rem">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-light prev-btn" data-target="step1">Back</button>
+                            <button type="button" class="btn btn-primary px-4 fw-bold next-btn" id="finishPosesBtn"
+                                data-target="step3" disabled>Next Step <i
+                                    class="fa-solid fa-arrow-right ms-2"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Confirmation -->
+                    <div class="wizard-pane" id="step3">
+                        <div class="text-center mb-4">
+                            <div
+                                style="width:60px;height:60px;background:#e6f8ec;color:#198754;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 1rem;">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <h4 class="fw-bold">Ready to Enroll</h4>
+                            <p class="text-muted">Review the details before saving the biometric profile.</p>
+                        </div>
+
+                        <div class="bg-light p-3 rounded mb-4">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted text-uppercase fw-bold">Name</small>
+                                    <div class="fw-bold" id="confirmName">--</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted text-uppercase fw-bold">Email</small>
+                                    <div class="fw-bold" id="confirmEmail">--</div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <small class="text-muted text-uppercase fw-bold">Biometric Data</small>
+                                <div><span class="badge bg-success">5/5 Poses Captured</span> <span
+                                        class="badge bg-primary">High Quality</span></div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-light prev-btn" data-target="step2">Back to
+                                Edit</button>
+                            <button type="button" class="btn btn-success px-4 fw-bold" id="submitEnrollmentBtn">Confirm
+                                & Enroll</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/admin';
+        const token = localStorage.getItem('adminToken');
+        if (!token) window.location.href = 'login.html';
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'login.html';
+        });
+
+        // ── WIZARD NAVIGATION ──────────────────────────────────────────
+        const steps = ['step1', 'step2', 'step3'];
+        const indicators = ['ind-1', 'ind-2', 'ind-3'];
+
+        document.querySelectorAll('.next-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = e.currentTarget.getAttribute('data-target');
+                if (target === 'step2') startCamera();
+                if (target === 'step3') {
+                    document.getElementById('confirmName').textContent = document.getElementById('stuName').value;
+                    document.getElementById('confirmEmail').textContent = document.getElementById('stuEmail').value;
+                }
+                showStep(target);
+            });
+        });
+        document.querySelectorAll('.prev-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => showStep(e.currentTarget.getAttribute('data-target')));
+        });
+
+        function showStep(stepId) {
+            steps.forEach(s => document.getElementById(s).classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+
+            const stepIdx = steps.indexOf(stepId);
+            indicators.forEach((ind, i) => {
+                const el = document.getElementById(ind);
+                el.classList.remove('active', 'completed');
+                if (i === stepIdx) el.classList.add('active');
+                if (i < stepIdx) el.classList.add('completed');
+            });
+        }
+
+        // ── CAMERA & MULTI-POSE LOGIC ──────────────────────────────────
+        let videoStream = null;
+        const video = document.getElementById('videoElement');
+        const canvas = document.getElementById('canvasElement');
+        const poses = ['front', 'left', 'right', 'up', 'down'];
+        let currentPoseIndex = 0;
+        const capturedImages = {};
+
+        async function startCamera() {
+            if (videoStream) return;
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = videoStream;
+            } catch (err) {
+                console.error('Camera error:', err);
+                alert('Camera access denied or unavailable.');
+            }
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(t => t.stop());
+                videoStream = null;
+            }
+        }
+
+        // Clean up when modal closes
+        document.getElementById('enrollModal').addEventListener('hidden.bs.modal', stopCamera);
+
+        document.getElementById('capturePoseBtn').addEventListener('click', () => {
+            if (currentPoseIndex >= poses.length) return;
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            // Mirror image correctly
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const base64Img = canvas.toDataURL('image/jpeg', 0.8);
+            const currentPose = poses[currentPoseIndex];
+
+            // Save & Show in grid
+            capturedImages[currentPose] = base64Img.split(',')[1];
+            const card = document.getElementById('pose-' + currentPose);
+            const imgEl = document.getElementById('img-' + currentPose);
+            card.classList.add('captured');
+            imgEl.src = base64Img;
+            imgEl.style.display = 'block';
+
+            currentPoseIndex++;
+
+            if (currentPoseIndex < poses.length) {
+                // Update guidance text
+                const nextp = poses[currentPoseIndex];
+                const texts = { left: 'Look slightly Left', right: 'Look slightly Right', up: 'Look slightly Up', down: 'Look slightly Down' };
+                document.getElementById('poseGuidance').innerHTML = `<i class="fa-solid fa-arrows-to-eye me-2"></i> ${texts[nextp]}`;
+            } else {
+                document.getElementById('poseGuidance').innerHTML = `<i class="fa-solid fa-circle-check me-2"></i> All poses captured successfully!`;
+                document.getElementById('poseGuidance').classList.replace('bg-primary', 'bg-success');
+                document.getElementById('poseGuidance').classList.add('text-white');
+                document.getElementById('capturePoseBtn').disabled = true;
+                document.getElementById('finishPosesBtn').disabled = false;
+            }
+        });
+
+        // ── SUBMIT ENROLLMENT ──────────────────────────────────────────
+        document.getElementById('submitEnrollmentBtn').addEventListener('click', async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Enrolling...';
+
+            // Payload maps to new schemas.py: UserCreate (V2)
+            const payload = {
+                name: document.getElementById('stuName').value,
+                email: document.getElementById('stuEmail').value,
+                face_encoding_front_base64: capturedImages['front'],
+                face_encoding_left_base64: capturedImages['left'],
+                face_encoding_right_base64: capturedImages['right'],
+                face_encoding_up_base64: capturedImages['up'],
+                face_encoding_down_base64: capturedImages['down'],
+                confidence_threshold: null
+            };
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/users/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('enrollModal')).hide();
+                    location.reload();
+                } else {
+                    const data = await res.json();
+                    alert(`Error: ${data.detail}`);
+                    btn.disabled = false;
+                    btn.textContent = 'Confirm & Enroll';
+                }
+            } catch (err) {
+                alert('Server error connecting to backend.');
+                btn.disabled = false;
+                btn.textContent = 'Confirm & Enroll';
+            }
+        });
+
+        // Load existing students
+        async function fetchStudents() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/users/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const students = await res.json();
+                const tbody = document.getElementById('studentTableBody');
+
+                if (students.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No students enrolled yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = students.map(s => `
+                    <tr>
+                        <td class="text-muted fw-bold">#${s.id}</td>
+                        <td class="fw-bold">${s.name}</td>
+                        <td class="text-muted">${s.email}</td>
+                        <td>${new Date(s.registration_date).toLocaleDateString()}</td>
+                        <td><span class="badge bg-success bg-opacity-25 text-success"><i class="fa-solid fa-cube me-1"></i> V2 5-Pose Model</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        fetchStudents();
+    </script>
+</body>
+
+</html>

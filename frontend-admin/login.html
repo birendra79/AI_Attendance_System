@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AI Attendance Admin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        .forgot-link {
+            font-size: 0.85rem;
+            color: #0d6efd;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Recovery option cards */
+        .recovery-option {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+            text-align: left;
+            width: 100%;
+            background: #fff;
+        }
+
+        .recovery-option:hover {
+            border-color: #0d6efd;
+            background: #f0f5ff;
+        }
+
+        .recovery-option .icon {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .recovery-option .opt-title {
+            font-weight: 600;
+            font-size: .95rem;
+            color: #212529;
+        }
+
+        .recovery-option .opt-desc {
+            font-size: .8rem;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        /* Modal steps */
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #6c757d;
+            font-size: .85rem;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .back-btn:hover {
+            color: #0d6efd;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h3 class="text-center mb-4 text-primary fw-bold">Admin Login</h3>
+
+        <ul class="nav nav-pills nav-justified mb-3" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pills-login-tab" data-bs-toggle="pill" data-bs-target="#pills-login"
+                    type="button" role="tab">Login</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-signup-tab" data-bs-toggle="pill" data-bs-target="#pills-signup"
+                    type="button" role="tab">Sign Up</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="pills-tabContent">
+            <!-- Login Form -->
+            <div class="tab-pane fade show active" id="pills-login" role="tabpanel">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="loginUsername" class="form-label fw-semibold">Username</label>
+                        <input type="text" class="form-control" id="loginUsername" required>
+                    </div>
+                    <div class="mb-1">
+                        <label for="loginPassword" class="form-label fw-semibold">Password</label>
+                        <input type="password" class="form-control" id="loginPassword" required>
+                    </div>
+                    <!-- Forgot link -->
+                    <div class="text-end mb-3">
+                        <a class="forgot-link" id="openForgotModal">Forgot password or username?</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold" id="loginBtn">Login</button>
+                    <div id="loginAlert" class="alert mt-3 d-none p-2 mb-0" role="alert"></div>
+                </form>
+            </div>
+
+            <!-- Signup Form -->
+            <div class="tab-pane fade" id="pills-signup" role="tabpanel">
+                <form id="signupForm">
+                    <div class="mb-3">
+                        <label for="signupUsername" class="form-label fw-semibold">Choose Username</label>
+                        <input type="text" class="form-control" id="signupUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="signupEmail" class="form-label fw-semibold">Email Address</label>
+                        <input type="email" class="form-control" id="signupEmail" required placeholder="you@gmail.com">
+                    </div>
+                    <div class="mb-4">
+                        <label for="signupPassword" class="form-label fw-semibold">Choose Password</label>
+                        <input type="password" class="form-control" id="signupPassword" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 fw-bold" id="signupBtn">Sign Up</button>
+                    <div id="signupAlert" class="alert mt-3 d-none p-2 mb-0" role="alert"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Forgot Password / Username Modal ===== -->
+    <div class="modal fade" id="forgotModal" tabindex="-1" aria-labelledby="forgotModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0" style="border-radius:14px;overflow:hidden;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="forgotModalLabel">Account Recovery</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-2" style="padding:1.5rem">
+
+                    <!-- Step 1: Choose recovery type -->
+                    <div class="step active" id="step-choose">
+                        <p class="text-muted mb-3" style="font-size:.9rem">What would you like to recover?</p>
+                        <div class="d-flex flex-column gap-3">
+                            <button class="recovery-option" id="chooseUsername">
+                                <div class="icon">👤</div>
+                                <div class="opt-title">Forgot Username</div>
+                                <div class="opt-desc">We'll send your username to your registered email address.</div>
+                            </button>
+                            <button class="recovery-option" id="choosePassword">
+                                <div class="icon">🔑</div>
+                                <div class="opt-title">Forgot Password</div>
+                                <div class="opt-desc">We'll email you a link to reset your password (valid 30 min).
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2a: Forgot Username — enter email -->
+                    <div class="step" id="step-username">
+                        <button class="back-btn mb-3" id="backFromUsername">← Back</button>
+                        <h6 class="fw-bold mb-1">Recover Username</h6>
+                        <p class="text-muted mb-3" style="font-size:.85rem">Enter the email linked to your account.</p>
+                        <div class="mb-3">
+                            <label for="forgotUsernameEmail" class="form-label fw-semibold">Email Address</label>
+                            <input type="email" class="form-control" id="forgotUsernameEmail"
+                                placeholder="you@gmail.com">
+                        </div>
+                        <button class="btn btn-primary w-100 fw-bold" id="sendUsernameBtn">Send My Username</button>
+                        <div id="usernameAlert" class="alert mt-3 d-none p-2 mb-0" role="alert"></div>
+                    </div>
+
+                    <!-- Step 2b: Forgot Password — enter email -->
+                    <div class="step" id="step-password">
+                        <button class="back-btn mb-3" id="backFromPassword">← Back</button>
+                        <h6 class="fw-bold mb-1">Reset Password</h6>
+                        <p class="text-muted mb-3" style="font-size:.85rem">Enter the email linked to your account.</p>
+                        <div class="mb-3">
+                            <label for="forgotPasswordEmail" class="form-label fw-semibold">Email Address</label>
+                            <input type="email" class="form-control" id="forgotPasswordEmail"
+                                placeholder="you@gmail.com">
+                        </div>
+                        <button class="btn btn-primary w-100 fw-bold" id="sendResetBtn">Send Reset Link</button>
+                        <div id="passwordAlert" class="alert mt-3 d-none p-2 mb-0" role="alert"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/auth';
+
+        // If already logged in, go to dashboard
+        if (localStorage.getItem('adminToken')) {
+            window.location.href = 'dashboard.html';
+        }
+
+        // ── Login ──────────────────────────────────────────────────────────────
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const alertBox = document.getElementById('loginAlert');
+            btn.disabled = true; alertBox.classList.add('d-none');
+
+            const formData = new URLSearchParams();
+            formData.append('username', document.getElementById('loginUsername').value);
+            formData.append('password', document.getElementById('loginPassword').value);
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('adminToken', data.access_token);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alertBox.className = 'alert mt-3 alert-danger p-2 mb-0';
+                    alertBox.textContent = data.detail || 'Login failed';
+                    alertBox.classList.remove('d-none');
+                }
+            } catch (error) {
+                alertBox.className = 'alert mt-3 alert-danger p-2 mb-0';
+                alertBox.textContent = 'Server error. Is the backend running?';
+                alertBox.classList.remove('d-none');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // ── Signup ─────────────────────────────────────────────────────────────
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('signupBtn');
+            const alertBox = document.getElementById('signupAlert');
+            btn.disabled = true; alertBox.classList.add('d-none');
+
+            const payload = {
+                username: document.getElementById('signupUsername').value,
+                email: document.getElementById('signupEmail').value,
+                password: document.getElementById('signupPassword').value
+            };
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    alertBox.className = 'alert mt-3 alert-success p-2 mb-0';
+                    alertBox.innerHTML = `<strong>✅ Signup successful!</strong><br>You can now log in.`;
+                    alertBox.classList.remove('d-none');
+                    document.getElementById('signupForm').reset();
+                } else {
+                    alertBox.className = 'alert mt-3 alert-danger p-2 mb-0';
+                    alertBox.textContent = data.detail || 'Signup failed';
+                    alertBox.classList.remove('d-none');
+                }
+            } catch (error) {
+                alertBox.className = 'alert mt-3 alert-danger p-2 mb-0';
+                alertBox.textContent = 'Server error. Is the backend running?';
+                alertBox.classList.remove('d-none');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // ── Forgot Modal ───────────────────────────────────────────────────────
+        const forgotModal = new bootstrap.Modal(document.getElementById('forgotModal'));
+
+        function showStep(id) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        document.getElementById('openForgotModal').addEventListener('click', () => {
+            showStep('step-choose');
+            // Clear inputs & alerts
+            ['forgotUsernameEmail', 'forgotPasswordEmail'].forEach(id => document.getElementById(id).value = '');
+            ['usernameAlert', 'passwordAlert'].forEach(id => document.getElementById(id).classList.add('d-none'));
+            forgotModal.show();
+        });
+
+        document.getElementById('chooseUsername').addEventListener('click', () => showStep('step-username'));
+        document.getElementById('choosePassword').addEventListener('click', () => showStep('step-password'));
+        document.getElementById('backFromUsername').addEventListener('click', () => showStep('step-choose'));
+        document.getElementById('backFromPassword').addEventListener('click', () => showStep('step-choose'));
+
+        // Send username
+        document.getElementById('sendUsernameBtn').addEventListener('click', async () => {
+            const email = document.getElementById('forgotUsernameEmail').value.trim();
+            const alert = document.getElementById('usernameAlert');
+            const btn = document.getElementById('sendUsernameBtn');
+            if (!email) { alert.className = 'alert mt-3 alert-warning p-2 mb-0'; alert.textContent = 'Please enter your email.'; alert.classList.remove('d-none'); return; }
+            btn.disabled = true; alert.classList.add('d-none');
+            try {
+                const res = await fetch(`${API_BASE_URL}/forgot-username`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                alert.className = 'alert mt-3 alert-success p-2 mb-0';
+                alert.textContent = data.message;
+                alert.classList.remove('d-none');
+                document.getElementById('forgotUsernameEmail').value = '';
+            } catch {
+                alert.className = 'alert mt-3 alert-danger p-2 mb-0';
+                alert.textContent = 'Server error. Is the backend running?';
+                alert.classList.remove('d-none');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // Send password reset
+        document.getElementById('sendResetBtn').addEventListener('click', async () => {
+            const email = document.getElementById('forgotPasswordEmail').value.trim();
+            const alert = document.getElementById('passwordAlert');
+            const btn = document.getElementById('sendResetBtn');
+            if (!email) { alert.className = 'alert mt-3 alert-warning p-2 mb-0'; alert.textContent = 'Please enter your email.'; alert.classList.remove('d-none'); return; }
+            btn.disabled = true; alert.classList.add('d-none');
+            try {
+                const res = await fetch(`${API_BASE_URL}/forgot-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                alert.className = 'alert mt-3 alert-success p-2 mb-0';
+                alert.textContent = data.message;
+                alert.classList.remove('d-none');
+                document.getElementById('forgotPasswordEmail').value = '';
+            } catch {
+                alert.className = 'alert mt-3 alert-danger p-2 mb-0';
+                alert.textContent = 'Server error. Is the backend running?';
+                alert.classList.remove('d-none');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

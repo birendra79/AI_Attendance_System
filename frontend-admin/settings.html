@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - AI Attendance Admin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* [Same base styles] */
+        :root {
+            --sidebar-width: 260px;
+            --primary-bg: #f4f7fe;
+            --sidebar-bg: #111c43;
+            --sidebar-hover: rgba(255, 255, 255, 0.08);
+            --sidebar-active: #0d6efd;
+            --text-main: #2b3674;
+            --text-muted: #a3aed1;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            color: #fff;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .nav-links {
+            padding: 1rem 0.5rem;
+            list-style: none;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            margin-bottom: 0.2rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.8rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+            background-color: var(--sidebar-hover);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            color: #fff;
+            background-color: var(--sidebar-active);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        }
+
+        .nav-link i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem 2.5rem;
+            flex-grow: 1;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            color: #2b3674;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: #a3aed1;
+            font-weight: 500;
+        }
+
+        .panel {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2b3674;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #f4f7fe;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f8faff;
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info h6 {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 1rem;
+            color: #2b3674;
+        }
+
+        .setting-info p {
+            font-size: 0.85rem;
+            color: #a3aed1;
+            margin: 0;
+            max-width: 500px;
+        }
+
+        /* Custom ranges & toggles */
+        .form-range::-webkit-slider-thumb {
+            background: #0d6efd;
+        }
+
+        .form-switch .form-check-input {
+            width: 3em;
+            height: 1.5em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-icon"><i class="fa-solid fa-expand text-white"></i></div>
+            <div class="brand-text">Aura Admin</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i>
+                    Dashboard</a></li>
+            <li class="nav-item mt-3 mb-1"><small class="text-uppercase ms-3"
+                    style="color:var(--text-muted);font-size:0.75rem;font-weight:700">Management</small></li>
+            <li class="nav-item"><a href="students.html" class="nav-link"><i class="fa-solid fa-user-graduate"></i>
+                    Students</a></li>
+            <li class="nav-item"><a href="attendance.html" class="nav-link"><i class="fa-regular fa-calendar-check"></i>
+                    Attendance</a></li>
+            <li class="nav-item"><a href="reports.html" class="nav-link"><i class="fa-solid fa-file-export"></i>
+                    Reports</a></li>
+            <li class="nav-item mt-3 mb-1"><small class="text-uppercase ms-3"
+                    style="color:var(--text-muted);font-size:0.75rem;font-weight:700">System</small></li>
+            <li class="nav-item"><a href="settings.html" class="nav-link active"><i class="fa-solid fa-gear"></i>
+                    Settings</a></li>
+            <li class="nav-item"><a href="../frontend-kiosk/index.html" target="_blank" class="nav-link text-warning"><i
+                        class="fa-solid fa-camera"></i> Kiosk Mode</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button id="logoutBtn" class="btn btn-outline-light w-100"><i
+                    class="fa-solid fa-arrow-right-from-bracket me-2"></i> Log Out</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <div class="page-subtitle">Pages / System</div>
+                <h1 class="page-title">AI & Recognition Settings</h1>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn btn-primary fw-bold px-4" style="border-radius: 8px;">Save Changes</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- AI Thresholds -->
+                <div class="panel">
+                    <h3 class="panel-title"><i class="fa-solid fa-sliders me-2 text-primary"></i> Global Confidence
+                        Thresholds</h3>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h6><i class="fa-solid fa-face-smile text-success me-2"></i> Unmasked Face Recognition</h6>
+                            <p>Minimum Euclidean distance required to confidently match a standard unmasked face. Lower
+                                is stricter.</p>
+                        </div>
+                        <div style="width: 200px">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="fw-bold text-muted">Strict</small>
+                                <span class="badge bg-primary">0.45</span>
+                                <small class="fw-bold text-muted">Lenient</small>
+                            </div>
+                            <input type="range" class="form-range" min="0.2" max="0.7" step="0.05" value="0.45"
+                                id="thUnmasked">
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h6><i class="fa-solid fa-mask-face text-warning me-2"></i> Masked / Periocular Recognition
+                            </h6>
+                            <p>Threshold for recognizing students wearing masks based on periocular (eye region)
+                                features.</p>
+                        </div>
+                        <div style="width: 200px">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="fw-bold text-muted">Strict</small>
+                                <span class="badge bg-warning text-dark">0.55</span>
+                                <small class="fw-bold text-muted">Lenient</small>
+                            </div>
+                            <input type="range" class="form-range" min="0.3" max="0.8" step="0.05" value="0.55"
+                                id="thMasked">
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h6><i class="fa-solid fa-shield-halved text-danger me-2"></i> Anti-Spoofing & Liveness Base
+                            </h6>
+                            <p>Confidence score required for the liveness detection model to pass a frame as a real 3D
+                                face.</p>
+                        </div>
+                        <div style="width: 200px">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="fw-bold text-muted">Lenient</small>
+                                <span class="badge bg-danger">85%</span>
+                                <small class="fw-bold text-muted">Strict</small>
+                            </div>
+                            <input type="range" class="form-range" min="50" max="99" step="1" value="85" id="thSpoof">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verification Modes -->
+                <div class="panel">
+                    <h3 class="panel-title"><i class="fa-solid fa-video me-2 text-primary"></i> Kiosk Verification Modes
+                    </h3>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h6>Multi-Pose Averaging</h6>
+                            <p>When enabled, the system verifies against all 5 enrolled poses (Front, L, R, Up, Down)
+                                rather than just the front reference. Slightly slower but much more accurate.</p>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" checked>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h6>Active Liveness Challenge</h6>
+                            <p>Force students to perform a random action (e.g. "Blink twice", "Turn head left") before
+                                validation to prevent printed photo or tablet spoofing.</p>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" checked>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h6>Offline Sync Mode</h6>
+                            <p>Store encrypted facial encodings directly in the browser's IndexedDB. Allows the kiosk to
+                                operate without internet and sync later.</p>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="offlineSyncToggle">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="panel bg-primary text-white"
+                    style="border-radius: 16px; box-shadow: 0 10px 30px rgba(13, 110, 253, 0.2);">
+                    <h3 class="panel-title text-white border-0 mb-1"><i class="fa-solid fa-bolt text-warning me-2"></i>
+                        System Status</h3>
+                    <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 2rem;">Overview of
+                        background services</p>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fw-semibold">AI Absenteeism Engine</span>
+                        <span class="badge bg-success bg-opacity-25 text-white"><i
+                                class="fa-solid fa-circle text-success"
+                                style="font-size:8px; vertical-align:middle; margin-right:4px;"></i> Active</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fw-semibold">Spoof Detection Pipeline</span>
+                        <span class="badge bg-success bg-opacity-25 text-white"><i
+                                class="fa-solid fa-circle text-success"
+                                style="font-size:8px; vertical-align:middle; margin-right:4px;"></i> Active</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">Email Service</span>
+                        <span class="badge bg-warning bg-opacity-25 text-white"><i
+                                class="fa-solid fa-circle text-warning"
+                                style="font-size:8px; vertical-align:middle; margin-right:4px;"></i> Check .env</span>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3 class="panel-title border-0 mb-2">Audit Subsystem</h3>
+                    <p class="text-muted" style="font-size:0.85rem">Every manual override, setting change, and logic
+                        modification is stored in the <code>audit_logs</code> table. This is an append-only ledger.</p>
+                    <a href="#" class="btn btn-outline-primary w-100 fw-bold mt-2"><i
+                            class="fa-solid fa-download me-2"></i> Export Integrity Log</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('adminToken');
+        if (!token) window.location.href = 'login.html';
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'login.html';
+        });
+
+        // Update range badges dynamically
+        document.querySelectorAll('input[type=range]').forEach(range => {
+            range.addEventListener('input', function () {
+                this.parentElement.querySelector('.badge').textContent = this.id === 'thSpoof' ? this.value + '%' : this.value;
+            });
+        });
+    </script>
+</body>
+
+</html>

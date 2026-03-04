@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance - AI Attendance Admin</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* [Same base styles as Dashboard] */
+        :root {
+            --sidebar-width: 260px;
+            --primary-bg: #f4f7fe;
+            --sidebar-bg: #111c43;
+            --sidebar-hover: rgba(255, 255, 255, 0.08);
+            --sidebar-active: #0d6efd;
+            --text-main: #2b3674;
+            --text-muted: #a3aed1;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            color: #fff;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .brand-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .nav-links {
+            padding: 1rem 0.5rem;
+            list-style: none;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            margin-bottom: 0.2rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.8rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+            background-color: var(--sidebar-hover);
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            color: #fff;
+            background-color: var(--sidebar-active);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        }
+
+        .nav-link i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2rem 2.5rem;
+            flex-grow: 1;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            color: #2b3674;
+        }
+
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: #a3aed1;
+            font-weight: 500;
+        }
+
+        .panel {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .table-custom th {
+            font-weight: 600;
+            color: #a3aed1;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid #f4f7fe;
+            padding: 1rem;
+        }
+
+        .table-custom td {
+            vertical-align: middle;
+            padding: 1rem;
+            color: #2b3674;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #f4f7fe;
+        }
+
+        .table-custom tbody tr:hover {
+            background-color: #f8faff;
+        }
+
+        .badge-soft-success {
+            background: #e6f8ec;
+            color: #198754;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .badge-soft-danger {
+            background: #feeeed;
+            color: #dc3545;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .badge-soft-warning {
+            background: #fff4e5;
+            color: #fd7e14;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .badge-soft-info {
+            background: #e8f0fe;
+            color: #0d6efd;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            background: #fff;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-icon"><i class="fa-solid fa-expand text-white"></i></div>
+            <div class="brand-text">Aura Admin</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item">
+                <a href="dashboard.html" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+            </li>
+            <li class="nav-item mt-3 mb-1"><small class="text-uppercase ms-3"
+                    style="color:var(--text-muted);font-size:0.75rem;font-weight:700;letter-spacing:1px">Management</small>
+            </li>
+            <li class="nav-item">
+                <a href="students.html" class="nav-link"><i class="fa-solid fa-user-graduate"></i> Students</a>
+            </li>
+            <li class="nav-item">
+                <a href="attendance.html" class="nav-link active"><i class="fa-regular fa-calendar-check"></i>
+                    Attendance</a>
+            </li>
+            <li class="nav-item">
+                <a href="reports.html" class="nav-link"><i class="fa-solid fa-file-export"></i> Reports</a>
+            </li>
+            <li class="nav-item mt-3 mb-1"><small class="text-uppercase ms-3"
+                    style="color:var(--text-muted);font-size:0.75rem;font-weight:700;letter-spacing:1px">System</small>
+            </li>
+            <li class="nav-item">
+                <a href="settings.html" class="nav-link"><i class="fa-solid fa-gear"></i> Settings</a>
+            </li>
+            <li class="nav-item">
+                <a href="../frontend-kiosk/index.html" target="_blank" class="nav-link text-warning"><i
+                        class="fa-solid fa-camera"></i> Kiosk Mode</a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <button id="logoutBtn" class="btn btn-outline-light w-100 text-start"
+                style="border-color: rgba(255,255,255,0.2)">
+                <i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Log Out
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="topbar">
+            <div>
+                <div class="page-subtitle">Pages / Management</div>
+                <h1 class="page-title">Attendance Logs</h1>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn btn-primary fw-bold" style="border-radius: 8px;" data-bs-toggle="modal"
+                    data-bs-target="#overrideModal">
+                    <i class="fa-solid fa-pen-to-square me-2"></i> Manual Override
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar align-items-end">
+            <div style="flex: 1">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Search
+                    Student</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i
+                            class="fa-solid fa-search"></i></span>
+                    <input type="text" class="form-control border-start-0" id="searchFilter"
+                        placeholder="Name or Student ID">
+                </div>
+            </div>
+            <div style="flex: 1">
+                <label class="form-label" style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Date
+                    Range</label>
+                <input type="date" class="form-control" id="dateFilter">
+            </div>
+            <div style="flex: 1">
+                <label class="form-label"
+                    style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Session</label>
+                <select class="form-select" id="sessionFilter">
+                    <option value="">All Sessions</option>
+                    <option value="cs101">CS101 - Morning</option>
+                    <option value="math200">MATH200 - Afternoon</option>
+                </select>
+            </div>
+            <div style="flex: 1">
+                <label class="form-label"
+                    style="font-size:0.85rem; font-weight:600; color:var(--text-muted);">Status</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">Any Status</option>
+                    <option value="Present">Present</option>
+                    <option value="Absent">Absent</option>
+                    <option value="Late">Late</option>
+                </select>
+            </div>
+            <div>
+                <button class="btn btn-primary fw-bold px-4" style="height: 38px;"><i class="fa-solid fa-filter"></i>
+                    Filter</button>
+            </div>
+        </div>
+
+        <!-- Logs Table -->
+        <div class="panel">
+            <div class="table-responsive">
+                <table class="table table-custom table-borderless align-middle" id="attendanceTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Student Name</th>
+                            <th>Session</th>
+                            <th>Date / Time</th>
+                            <th>Status</th>
+                            <th>Confidence</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- JS Populated -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                <span class="text-muted" style="font-size: 0.85rem">Showing 1 to 10 of 45 entries</span>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </main>
+
+    <!-- Manual Override Modal -->
+    <div class="modal fade" id="overrideModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0" style="border-radius:14px;overflow:hidden;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Manual override</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-2" style="padding:1.5rem">
+                    <div class="alert alert-info py-2" style="font-size:0.85rem">
+                        <i class="fa-solid fa-circle-info me-2"></i> Changes here will be recorded in the immutable
+                        Audit Log.
+                    </div>
+                    <form id="overrideForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Select Student</label>
+                            <select class="form-select" required>
+                                <option value="">-- Choose student --</option>
+                                <option value="1">Sarah Adams</option>
+                                <option value="2">Michael Jones</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">New Status</label>
+                            <select class="form-select" required>
+                                <option value="Present">Present (Manual)</option>
+                                <option value="Excused">Excused Absence</option>
+                                <option value="Late">Late (Manual)</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Reason / Audit Note</label>
+                            <textarea class="form-control" rows="2" placeholder="e.g. Doctor's note received"
+                                required></textarea>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100 fw-bold">Save Override</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('adminToken');
+        if (!token) window.location.href = 'login.html';
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('adminToken');
+            window.location.href = 'login.html';
+        });
+
+        // Live data loading
+        async function fetchAttendance() {
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/admin/attendance', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const attendance = await res.json();
+                const tbody = document.querySelector('#attendanceTable tbody');
+
+                if (!attendance || attendance.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No attendance logs found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = attendance.map(r => {
+                    const dateObj = new Date(r.timestamp);
+                    const timeStr = dateObj.toLocaleDateString() + ", " + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    let badge = 'success';
+                    if (r.status === 'Spoof Detected') badge = 'danger';
+                    else if (r.status !== 'Present') badge = 'warning';
+
+                    return `
+                        <tr>
+                            <td class="text-muted">#${r.id}</td>
+                            <td class="fw-bold">${r.user ? r.user.name : 'Unknown User'}</td>
+                            <td><span class="text-muted" style="font-size:.85rem">${r.session_id || 'N/A'}</span></td>
+                            <td><span style="font-weight:600">${timeStr}</span></td>
+                            <td><span class="badge-soft-${badge}">${r.status}</span></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress" style="height:6px;width:60px;">
+                                        <div class="progress-bar ${badge === 'success' ? 'bg-success' : 'bg-danger'}" style="width: ${r.confidence_score}%"></div>
+                                    </div> 
+                                    <small>${r.confidence_score}%</small>
+                                </div>
+                            </td>
+                            <td><button class="btn btn-sm btn-light text-primary"><i class="fa-solid fa-ellipsis"></i></button></td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error("Failed to load attendance", err);
+                document.querySelector('#attendanceTable tbody').innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Failed to load data.</td></tr>';
+            }
+        }
+
+        fetchAttendance();
+    </script>
+</body>
+
+</html>
