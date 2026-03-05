@@ -9,6 +9,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <style>
         /* [Same base layout] */
         :root {
@@ -375,8 +378,9 @@
                     <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search"></i></span>
                     <input type="text" class="form-control border-start-0" placeholder="Search by name or email">
                 </div>
-                <button class="btn btn-light text-primary fw-bold"><i class="fa-solid fa-file-export"></i> Export
-                    CSV</button>
+                <button class="btn btn-light text-primary fw-bold" onclick="exportCSV()">
+                    <i class="fa-solid fa-file-export"></i> Export CSV
+                </button>
             </div>
 
             <table class="table table-custom table-hover">
@@ -452,12 +456,34 @@
 
                         <div class="row g-3">
                             <div class="col-md-7">
-                                <video id="videoElement" autoplay playsinline></video>
-                                <canvas id="canvasElement" style="display:none;"></canvas>
-                                <div class="text-center mt-3">
-                                    <button class="btn btn-warning fw-bold rounded-pill shadow-sm" id="capturePoseBtn">
-                                        <i class="fa-solid fa-camera"></i> Capture Frame
-                                    </button>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold">Camera Feed</span>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="toggleMobileBtn"
+                                        onclick="toggleMobileCapture()">Capture via Mobile Phone</button>
+                                </div>
+                                <div id="desktopCaptureArea">
+                                    <video id="videoElement" autoplay playsinline></video>
+                                    <canvas id="canvasElement" style="display:none;"></canvas>
+                                    <div class="text-center mt-3">
+                                        <button class="btn btn-warning fw-bold rounded-pill shadow-sm"
+                                            id="capturePoseBtn">
+                                            <i class="fa-solid fa-camera"></i> Capture Frame
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="mobileCaptureArea" class="d-none border rounded p-4 bg-light text-center">
+                                    <h5 class="mb-3">Scan with Phone Camera</h5>
+                                    <div id="qrcode" class="d-flex justify-content-center mb-3"></div>
+                                    <p class="small text-muted mb-0" id="pollingStatus">Waiting for mobile capture...
+                                    </p>
+                                </div>
+
+                                <div id="mobileSuccessArea"
+                                    class="d-none border rounded p-4 bg-success text-white text-center">
+                                    <h3 class="mb-0"><i class="fa-solid fa-check-circle"></i></h3>
+                                    <h5 class="mb-0 mt-2">Photos Received</h5>
+                                    <p class="small mb-0">You can now proceed to the next step.</p>
                                 </div>
                             </div>
                             <div class="col-md-5">
@@ -547,7 +573,8 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const API_BASE_URL = 'http://127.0.0.1:8000/api/admin';
+        const LOCAL_IP = "10.191.155.243";
+        const API_BASE_URL = `http://${LOCAL_IP}:8000/api/admin`;
         const token = localStorage.getItem('adminToken');
         if (!token) window.location.href = 'login.html';
 
@@ -596,6 +623,51 @@
         let currentPoseIndex = 0;
         const capturedImages = {};
 
+        // ── BLUR DETECTION ──────────────────────────────────────────────
+        function checkBlur(canvas) {
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const w = imageData.width;
+            const h = imageData.height;
+
+            // Grayscale
+            const gray = new Uint8Array(w * h);
+            for (let i = 0; i < data.length; i += 4) {
+                gray[i / 4] = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+            }
+
+            // 3x3 Laplacian filter
+            let mean = 0;
+            const laplacian = new Float32Array(w * h);
+            let count = 0;
+
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const i = y * w + x;
+                    const val =
+                        gray[(y - 1) * w + x] +
+                        gray[(y + 1) * w + x] +
+                        gray[y * w + (x - 1)] +
+                        gray[y * w + (x + 1)] -
+                        4 * gray[i];
+                    laplacian[i] = val;
+                    mean += val;
+                    count++;
+                }
+            }
+
+            mean /= count;
+            let variance = 0;
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const i = y * w + x;
+                    variance += Math.pow(laplacian[i] - mean, 2);
+                }
+            }
+            return variance / count;
+        }
+
         async function startCamera() {
             if (videoStream) return;
             try {
@@ -617,6 +689,105 @@
         // Clean up when modal closes
         document.getElementById('enrollModal').addEventListener('hidden.bs.modal', stopCamera);
 
+        // ── MOBILE CAPTURE LOGIC ───────────────────────────────────────
+        let useMobileCapture = false;
+        let pollingInterval = null;
+        let mobilePoses = null;
+
+        async function toggleMobileCapture() {
+            useMobileCapture = true;
+            document.getElementById('desktopCaptureArea').classList.add('d-none');
+            document.getElementById('mobileCaptureArea').classList.remove('d-none');
+            document.getElementById('toggleMobileBtn').classList.add('d-none');
+            document.getElementById('poseGuidance').innerHTML = `<i class="fa-solid fa-mobile-screen"></i> Follow the instructions on your phone`;
+
+            // Stop webcam
+            stopCamera();
+
+            try {
+                // Fetch Session and Config together
+                const sessionRes = await fetch(`${API_BASE_URL}/mobile-session/create`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const sessionData = await sessionRes.json();
+                const sessionId = sessionData.session_id;
+
+                const configRes = await fetch(`${API_BASE_URL}/system-config`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const configData = await configRes.json();
+
+                let mobileUrl = "";
+
+                if (configData.ngrok_frontend_url && configData.ngrok_backend_url) {
+                    // Global tunneling is active! Use the public URLs so mobile doesn't need Wi-Fi
+                    const frontendUrl = configData.ngrok_frontend_url;
+                    const backendUrl = configData.ngrok_backend_url;
+                    mobileUrl = `${frontendUrl}/frontend-admin/mobile_capture.html?session=${sessionId}&api=${backendUrl}`;
+                } else {
+                    // Fallback to local IP if start_with_ngrok.py isn't used
+                    const port = window.location.port ? `:${window.location.port}` : '';
+                    mobileUrl = `http://${LOCAL_IP}${port}/frontend-admin/mobile_capture.html?session=${sessionId}&api=http://${LOCAL_IP}:8000`;
+                }
+
+                // Render QR
+                new QRCode(document.getElementById("qrcode"), {
+                    text: mobileUrl,
+                    width: 200,
+                    height: 200
+                });
+
+                // Start polling
+                pollingInterval = setInterval(() => pollMobileSession(sessionId), 2000);
+            } catch (e) {
+                console.error('Could not start mobile session.', e);
+                alert('Could not start mobile session. Check server connection.');
+            }
+        }
+
+        async function pollMobileSession(sessionId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/mobile-session/${sessionId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'completed') {
+                        clearInterval(pollingInterval);
+                        mobilePoses = data.data;
+
+                        // Add poses to capturedImages
+                        capturedImages['front'] = mobilePoses.face_encoding_front_base64.split(',')[1];
+                        capturedImages['left'] = mobilePoses.face_encoding_left_base64.split(',')[1];
+                        capturedImages['right'] = mobilePoses.face_encoding_right_base64.split(',')[1];
+                        capturedImages['up'] = mobilePoses.face_encoding_up_base64.split(',')[1];
+                        capturedImages['down'] = mobilePoses.face_encoding_down_base64.split(',')[1];
+
+                        // Show all pictures in the UI grid
+                        poses.forEach(p => {
+                            const b64 = "data:image/jpeg;base64," + capturedImages[p];
+                            document.getElementById('pose-' + p).classList.add('captured');
+                            let imgEl = document.getElementById('img-' + p);
+                            imgEl.src = b64;
+                            imgEl.style.display = 'block';
+                        });
+
+                        document.getElementById('mobileCaptureArea').classList.add('d-none');
+                        document.getElementById('mobileSuccessArea').classList.remove('d-none');
+
+                        // Fake progress logic forward
+                        document.getElementById('finishPosesBtn').disabled = false;
+                        document.getElementById('poseGuidance').innerHTML = `<i class="fa-solid fa-circle-check me-2"></i> All poses captured remotely!`;
+                        document.getElementById('poseGuidance').classList.replace('bg-primary', 'bg-success');
+                        document.getElementById('poseGuidance').classList.add('text-white');
+                    }
+                }
+            } catch (e) {
+                // Ignore silent poll fails
+            }
+        }
+
         document.getElementById('capturePoseBtn').addEventListener('click', () => {
             if (currentPoseIndex >= poses.length) return;
 
@@ -627,6 +798,14 @@
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Check blur severity
+            const variance = checkBlur(canvas);
+            console.log("Image variance:", variance);
+            if (variance < 40) {
+                const proceed = confirm(`Warning: The camera feed appears very blurry (Sharpness: ${variance.toFixed(1)}/40.0 min).\n\nIf you enroll a blurry photo, the student may not be recognized by the kiosk.\n\nPlease wipe the lens or improve lighting. Do you still want to forcefully use this photo?`);
+                if (!proceed) return;
+            }
 
             const base64Img = canvas.toDataURL('image/jpeg', 0.8);
             const currentPose = poses[currentPoseIndex];
@@ -720,8 +899,8 @@
                         <td>${new Date(s.registration_date).toLocaleDateString()}</td>
                         <td><span class="badge bg-success bg-opacity-25 text-success"><i class="fa-solid fa-cube me-1"></i> V2 5-Pose Model</span></td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editStudent(${s.id}, '${s.name}', '${s.email}')"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent(${s.id}, '${s.name}')"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `).join('');
@@ -729,6 +908,92 @@
                 console.error(err);
             }
         }
+
+        // ── EDIT STUDENT ───────────────────────────────────────────────
+        async function editStudent(id, currentName, currentEmail) {
+            const newName = prompt("Enter new name for student:", currentName);
+            if (newName === null) return; // Cancelled
+            const newEmail = prompt("Enter new email for student:", currentEmail);
+            if (newEmail === null) return;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name: newName, email: newEmail })
+                });
+
+                if (res.ok) {
+                    fetchStudents(); // Refresh table
+                } else {
+                    const data = await res.json();
+                    alert(`Failed to update student: ${data.detail || 'Unknown error'}`);
+                }
+            } catch (err) {
+                alert("Error connecting to server.");
+                console.error(err);
+            }
+        }
+
+        // ── DELETE STUDENT ─────────────────────────────────────────────
+        async function deleteStudent(id, name) {
+            if (!confirm(`Are you absolutely sure you want to delete ${name}?\n\nThis will remove their biometric profile and all of their attendance records permanently.`)) {
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    fetchStudents(); // Refresh table
+                } else {
+                    const data = await res.json();
+                    alert(`Failed to delete student: ${data.detail || 'Unknown error'}`);
+                }
+            } catch (err) {
+                alert("Error connecting to server.");
+                console.error(err);
+            }
+        }
+
+        // ── EXPORT CSV ─────────────────────────────────────────────────
+        function exportCSV() {
+            const table = document.getElementById("studentTableBody");
+            const rows = table.querySelectorAll("tr");
+            if (rows.length === 0 || (rows.length === 1 && rows[0].innerText.includes("No students"))) {
+                alert("No data to export.");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,ID,Name,Email,Registration_Date,Status\n";
+            rows.forEach(row => {
+                const cols = row.querySelectorAll("td");
+                if (cols.length > 5) { // Skip Action column
+                    const rowData = [
+                        cols[0].innerText.replace('#', ''),
+                        cols[1].innerText,
+                        cols[2].innerText,
+                        cols[3].innerText,
+                        cols[4].innerText
+                    ];
+                    csvContent += rowData.join(",") + "\n";
+                }
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `students_export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         fetchStudents();
     </script>
 </body>

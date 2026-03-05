@@ -8,6 +8,9 @@ import face_recognition
 from .. import schemas, models, database
 from ..utils.face_recognition import get_face_encoding, compare_faces
 
+from ..utils.face_recognition import get_face_encoding, compare_faces, decode_base64_image, is_image_blurry, check_liveness
+import cv2
+
 router = APIRouter()
 DbSession = Annotated[Session, Depends(database.get_db)]
 
@@ -19,10 +22,29 @@ class VerifyRequest(BaseModel):
 
 @router.post("/verify")
 def verify_attendance(data: VerifyRequest, db: DbSession):
-    # Parse image and get encoding
+    # Decode image securely for heuristics
+    try:
+        img = decode_base64_image(data.frame)
+        if img is None:
+            return {"status": "unknown", "reason": "Corrupted image frame"}
+    except Exception:
+        return {"status": "unknown", "reason": "Failed to decode image"}
+        
+    # 1. Fog/Blur Detection
+    # Calculate exact variance to pass to the adaptive threshold later
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    variance = cv2.Laplacian(gray, cv2.CV_64F).var()
+    if variance < 80.0: # Moderate blur threshold
+        return {"status": "poor_quality", "reason": "Environment is too foggy or camera is blurry. Please wipe the lens or step closer."}
+        
+    # 2. Anti-Spoofing Liveness Check
+    if not check_liveness(img):
+        return {"status": "spoof", "reason": "Liveness check failed. Please remove masks and ensure your eyes are clearly visible."}
+
+    # 3. Parse image and get encoding
     current_encoding = get_face_encoding(data.frame)
     if current_encoding is None:
-        return {"status": "unknown", "reason": "No face detected"}
+        return {"status": "unknown", "reason": "No face detected by recognition engine"}
         
     users = db.query(models.User).all()
     if not users:
@@ -51,9 +73,12 @@ def verify_attendance(data: VerifyRequest, db: DbSession):
             best_match_user = user
 
     # Apply adaptive threshold if set, otherwise global 0.45 
-    threshold = best_match_user.confidence_threshold if best_match_user and best_match_user.confidence_threshold else 0.45
+    # If the variance is extremely high (very sharp), allow a slightly looser threshold because we trust the crisp edges.
+    # If variance is somewhat low, tighten the threshold to prevent false positives in noisy images.
+    base_thresh = best_match_user.confidence_threshold if best_match_user and best_match_user.confidence_threshold else 0.45
+    adaptive_threshold = base_thresh + 0.05 if variance > 500 else base_thresh - 0.05
 
-    if best_match_user and best_distance <= threshold:
+    if best_match_user and best_distance <= adaptive_threshold:
         # Convert distance (0.0=perfect, 0.6=barely passing) to a 100% scale loosely
         # Distance of 0.40 -> ~90%, Distance of 0.20 -> ~96%
         confidence = max(0, min(100, int((1 - (best_distance / 0.6)) * 100)))

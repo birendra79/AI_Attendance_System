@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Capture</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            padding-bottom: 2rem;
+        }
+
+        .upload-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+            max-height: 200px;
+            object-fit: cover;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <h3 class="text-center mb-4">Capture Face Poses</h3>
+
+        <div id="statusAlert" class="alert alert-info d-none" role="alert"></div>
+
+        <div class="upload-card">
+            <h5>1. Front Face</h5>
+            <div class="file-input-wrapper">
+                <button class="btn btn-outline-primary w-100 py-3">Take Photo</button>
+                <input type="file" accept="image/*" capture="user" id="pose_front"
+                    onchange="handleImage(this, 'preview_front')">
+            </div>
+            <img id="preview_front" class="preview-img">
+        </div>
+
+        <div class="upload-card">
+            <h5>2. Look Left</h5>
+            <div class="file-input-wrapper">
+                <button class="btn btn-outline-secondary w-100 py-3">Take Photo</button>
+                <input type="file" accept="image/*" capture="user" id="pose_left"
+                    onchange="handleImage(this, 'preview_left')">
+            </div>
+            <img id="preview_left" class="preview-img">
+        </div>
+
+        <div class="upload-card">
+            <h5>3. Look Right</h5>
+            <div class="file-input-wrapper">
+                <button class="btn btn-outline-secondary w-100 py-3">Take Photo</button>
+                <input type="file" accept="image/*" capture="user" id="pose_right"
+                    onchange="handleImage(this, 'preview_right')">
+            </div>
+            <img id="preview_right" class="preview-img">
+        </div>
+
+        <div class="upload-card">
+            <h5>4. Look Up</h5>
+            <div class="file-input-wrapper">
+                <button class="btn btn-outline-secondary w-100 py-3">Take Photo</button>
+                <input type="file" accept="image/*" capture="user" id="pose_up"
+                    onchange="handleImage(this, 'preview_up')">
+            </div>
+            <img id="preview_up" class="preview-img">
+        </div>
+
+        <div class="upload-card">
+            <h5>5. Look Down</h5>
+            <div class="file-input-wrapper">
+                <button class="btn btn-outline-secondary w-100 py-3">Take Photo</button>
+                <input type="file" accept="image/*" capture="user" id="pose_down"
+                    onchange="handleImage(this, 'preview_down')">
+            </div>
+            <img id="preview_down" class="preview-img">
+        </div>
+
+        <button id="submitBtn" class="btn btn-success w-100 py-3 fw-bold mt-2" onclick="submitPoses()">Submit to
+            Computer</button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+        let apiURL = urlParams.get('api');
+
+        // Automatically fix "Mixed Content" blocks on mobile browsers
+        // If the frontend loaded via HTTPS (e.g. Ngrok), the API must be HTTPS too
+        if (apiURL && window.location.protocol === 'https:' && apiURL.startsWith('http://')) {
+            apiURL = apiURL.replace('http://', 'https://');
+        }
+
+        if (!sessionId || !apiURL) {
+            document.getElementById('statusAlert').textContent = "Error: Invalid QR code link. Please scan the QR code from the computer again.";
+            document.getElementById('statusAlert').classList.remove('d-none');
+            document.getElementById('submitBtn').disabled = true;
+        } else {
+            // DEBUG ALERT FOR THE USER
+            alert(`Debug Start\nSession: ${sessionId}\nAPI: ${apiURL}`);
+        }
+
+        // Object holding our base64 results
+        const poses = {
+            front: null,
+            left: null,
+            right: null,
+            up: null,
+            down: null
+        };
+
+        function handleImage(inputElement, previewId) {
+            const file = inputElement.files[0];
+            if (!file) return;
+
+            // Compress image using canvas
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Max dimension targeting 640px to shrink payload size
+                    const MAX_WIDTH = 640;
+                    const MAX_HEIGHT = 640;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+                    // Set preview
+                    const previewElement = document.getElementById(previewId);
+                    previewElement.src = dataUrl;
+                    previewElement.style.display = 'block';
+
+                    // Save data
+                    const poseKey = inputElement.id.split('_')[1];
+                    poses[poseKey] = dataUrl;
+
+                    inputElement.parentElement.querySelector('button').classList.replace('btn-outline-primary', 'btn-light');
+                    inputElement.parentElement.querySelector('button').classList.replace('btn-outline-secondary', 'btn-light');
+                    inputElement.parentElement.querySelector('button').textContent = "Retake Photo";
+                };
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        async function submitPoses() {
+            if (!poses.front) {
+                alert("Please capture at least the front face photo!");
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = "Uploading...";
+
+            // Match the keys with what register expects eventually
+            const payload = {
+                face_encoding_front_base64: poses.front,
+                face_encoding_left_base64: poses.left,
+                face_encoding_right_base64: poses.right,
+                face_encoding_up_base64: poses.up,
+                face_encoding_down_base64: poses.down
+            };
+
+            try {
+                // Submit to the dynamic API URL passed via QR code
+                const response = await fetch(`${apiURL}/api/admin/mobile-session/${sessionId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    document.body.innerHTML = `
+                        <div class="container mt-5 text-center">
+                            <h1 class="text-success display-1">✓</h1>
+                            <h3>Photos sent successfully!</h3>
+                            <p class="text-muted">You can now look back at your computer screen to complete registration.</p>
+                        </div>
+                    `;
+                } else {
+                    alert(`Failed to upload to the computer.\nStatus: ${response.status}\nURL: ${apiURL}`);
+                    btn.disabled = false;
+                    btn.textContent = "Try Upload Again";
+                }
+            } catch (err) {
+                console.error(err);
+                alert(`Network error: ${err.message || err}\nTarget API: ${apiURL}\n(Check if Windows Firewall is blocking port 8000, or if both are on the same Wi-Fi)`);
+                btn.disabled = false;
+                btn.textContent = "Try Upload Again";
+            }
+        }
+    </script>
+</body>
+
+</html>

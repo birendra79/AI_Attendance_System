@@ -269,8 +269,9 @@
                         </div>
 
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-primary fw-bold flex-grow-1"
-                                style="border-radius:8px"><i class="fa-solid fa-file-csv me-2"></i> Export CSV</button>
+                            <button type="button" class="btn btn-primary fw-bold flex-grow-1" style="border-radius:8px"
+                                onclick="exportReportCSV()"><i class="fa-solid fa-file-csv me-2"></i> Export
+                                CSV</button>
                             <button type="button" class="btn btn-danger fw-bold flex-grow-1"
                                 style="border-radius:8px"><i class="fa-solid fa-file-pdf me-2"></i> Export PDF</button>
                         </div>
@@ -370,6 +371,60 @@
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
+
+        // ── EXPORT CSV ─────────────────────────────────────────────────
+        async function exportReportCSV() {
+            const btn = document.querySelector('button[onclick="exportReportCSV()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Generating...';
+            btn.disabled = true;
+
+            try {
+                const API_BASE_URL = 'http://127.0.0.1:8000/api';
+                const res = await fetch(`${API_BASE_URL}/admin/attendance`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error("Failed to fetch data");
+
+                const logs = await res.json();
+                if (logs.length === 0) {
+                    alert("No attendance data to export.");
+                    return;
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8,ID,Student_ID,Name,Time,Match_Percentage,Record_Type\n";
+                logs.forEach(log => {
+                    const statusText = log.confidence_score !== null ?
+                        `Verified` : `Manual / Unknown`;
+
+                    const rowData = [
+                        log.id,
+                        log.user.id,
+                        log.user.name.replace(/,/g, ''), // strip commas
+                        new Date(log.timestamp).toLocaleString().replace(/,/g, ''),
+                        log.confidence_score ? log.confidence_score + '%' : 'N/A',
+                        statusText
+                    ];
+                    csvContent += rowData.join(",") + "\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `attendance_export_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (err) {
+                alert("Error generating CSV.");
+                console.error(err);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 

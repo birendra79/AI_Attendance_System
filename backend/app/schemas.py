@@ -44,6 +44,11 @@ class UserCreate(UserBase):
     face_encoding_down_base64: Optional[str] = None
     confidence_threshold: Optional[float] = None
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    confidence_threshold: Optional[float] = None
+
 class UserResponse(UserBase):
     id: int
     registration_date: datetime

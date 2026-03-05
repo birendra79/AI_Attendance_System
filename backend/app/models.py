@@ -15,10 +15,13 @@ class Admin(Base):
     reset_token = Column(String, nullable=True)
     reset_token_expiry = Column(DateTime, nullable=True)
 
+    users = relationship("User", back_populates="admin")
+
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(Integer, ForeignKey("admins.id"))
     name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
     
@@ -36,6 +39,7 @@ class User(Base):
 
     attendance_logs = relationship("AttendanceLog", back_populates="user")
     disputes = relationship("Dispute", back_populates="user")
+    admin = relationship("Admin", back_populates="users")
 
 class ClassSession(Base):
     __tablename__ = "class_sessions"

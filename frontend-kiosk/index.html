@@ -97,7 +97,8 @@
             box-shadow: 0 0 50px rgba(239, 68, 68, 0.3);
         }
 
-        .cam-wrapper.state-unknown {
+        .cam-wrapper.state-unknown,
+        .cam-wrapper.state-poor_quality {
             border-color: #f59e0b;
             box-shadow: 0 0 50px rgba(245, 158, 11, 0.3);
         }
@@ -215,6 +216,16 @@
 
         .status-overlay.spoof h4 {
             color: #ef4444;
+        }
+
+        .status-overlay.poor_quality .status-icon,
+        .status-overlay.unknown .status-icon {
+            background: #f59e0b;
+        }
+
+        .status-overlay.poor_quality h4,
+        .status-overlay.unknown h4 {
+            color: #f59e0b;
         }
 
         /* Liveness Challenge Prompt */
@@ -362,10 +373,10 @@
 
                 <!-- Result Overlay -->
                 <div class="status-overlay" id="statusOverlay">
-                    <div class="status-icon"><i class="fa-solid fa-check"></i></div>
+                    <div class="status-icon"><i class="fa-solid fa-spinner fa-spin"></i></div>
                     <div class="status-text">
-                        <h4 id="statusName">Sarah Adams</h4>
-                        <p id="statusMsg">Verified successfully (98%)</p>
+                        <h4 id="statusName">Authenticating...</h4>
+                        <p id="statusMsg">Please hold still</p>
                     </div>
                 </div>
             </div>
@@ -496,8 +507,11 @@
                     addToGrid(data.student_name, 'Present');
                 } else if (data.status === 'spoof') {
                     showResult('Spoof Detected', data.reason, 'spoof');
+                } else if (data.status === 'poor_quality') {
+                    showResult('Image Too Blurry', data.reason, 'poor_quality');
                 } else if (data.status === 'unknown') {
-                    showResult('Not Recognized', 'Face not found in database', 'unknown');
+                    // Check if it's not simply an unrecognized face, but a bad frame
+                    showResult('Not Recognized', data.reason || 'Face not found in database', 'unknown');
                 }
 
             } catch (err) {
@@ -517,6 +531,8 @@
 
             if (type === 'success') {
                 statusOverlay.querySelector('.status-icon').innerHTML = '<i class="fa-solid fa-check"></i>';
+            } else if (type === 'poor_quality') {
+                statusOverlay.querySelector('.status-icon').innerHTML = '<i class="fa-solid fa-cloud"></i>';
             } else {
                 statusOverlay.querySelector('.status-icon').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
             }
@@ -556,10 +572,6 @@
 
         // Initialize
         startCamera();
-
-        // Mock data for grid preview
-        addToGrid('David Chen', 'Present');
-        addToGrid('Emma Wilson', 'Present');
 
     </script>
 </body>
